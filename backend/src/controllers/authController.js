@@ -8,12 +8,12 @@ const register = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password,saltRounds); // şifreyi hashledik
 
-        pool.query('INSERT INTO "User" (username, email, password) VALUES ($1, $2, $3) RETURNING *', [username, email, hashedPassword]); // databaseye kayıt olan kullanıcının bilgilerini attık
+        await pool.query('INSERT INTO "User" (username, email, password) VALUES ($1, $2, $3) RETURNING *', [username, email, hashedPassword]); // databaseye kayıt olan kullanıcının bilgilerini attık
         res.status(201).json({
             message: "Kullanici olustu",
             user: {username, email, hashedPassword} // test icin
         });
-    }catch{
+    }catch(error){
         console.error(error);
         res.status(500).json({error: "sunucu hatasiymis guya"});
     }
@@ -26,6 +26,7 @@ const login = async (req, res) => {
         const userInfo = await pool.query('SELECT * FROM "User" where email = $1',[email]); // email eşleşmesi var mı check ediyoruz
         if( userInfo.rowCount == 0){ // Eğer dönen satır sayısı 0 ise (eşleşme yoksa yani)
             console.log("There is no such user exist!!");
+            // postman havada kalıyor res.status ekle
             return;
         }
         else{
