@@ -27,7 +27,7 @@ const login = async (req, res) => {
         const {email, password} = req.body;
 
         // burda userInfo'yu var'a çevirdik ama güvenli mi bu?
-        var userInfo = await pool.query('SELECT * FROM "User" where email = $1',[email]); // email eşleşmesi var mı check ediyoruz
+        const userInfo = await pool.query('SELECT * FROM "User" where email = $1',[email]); // email eşleşmesi var mı check ediyoruz
         if( userInfo.rowCount == 0){ // Eğer dönen satır sayısı 0 ise (eşleşme yoksa yani)
             console.log("There is no such user exist!!");
             // postman havada kalıyor res.status ekle
@@ -45,7 +45,7 @@ const login = async (req, res) => {
 
                 let jwtSecretKey = process.env.JWT_SECRET;
                 let data = {
-                    email: [userInfo.rows[0].email]
+                    email: userInfo.rows[0].email
                 }
                 const token = jwt.sign(data, jwtSecretKey);
 
