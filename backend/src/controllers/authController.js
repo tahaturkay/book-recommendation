@@ -1,5 +1,6 @@
-const pool = require("../config/db"); // databaseye erişiyoruz
+const pool = require("../config/db"); // dbye erişim
 const bcrypt = require("bcrypt"); // şifreyi hashlemek için
+const jwt = require("jsonwebtoken"); // JWT ile authenticate edicez
 
 // register fonksiyonu
 const register = async (req, res) => {
@@ -8,6 +9,7 @@ const register = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password,saltRounds); // şifreyi hashledik
 
+        // sql injection preventer
         await pool.query('INSERT INTO "User" (username, email, password) VALUES ($1, $2, $3) RETURNING *', [username, email, hashedPassword]); // databaseye kayıt olan kullanıcının bilgilerini attık
         res.status(201).json({
             message: "Kullanici olustu",
@@ -15,7 +17,7 @@ const register = async (req, res) => {
         });
     }catch(error){
         console.error(error);
-        res.status(500).json({error: "sunucu hatasiymis guya"});
+        res.status(500).json({error: "Server error"});
     }
 };
 
@@ -23,26 +25,40 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     try{
         const {email, password} = req.body;
-        const userInfo = await pool.query('SELECT * FROM "User" where email = $1',[email]); // email eşleşmesi var mı check ediyoruz
+
+        // burda userInfo'yu var'a çevirdik ama güvenli mi bu?
+        var userInfo = await pool.query('SELECT * FROM "User" where email = $1',[email]); // email eşleşmesi var mı check ediyoruz
         if( userInfo.rowCount == 0){ // Eğer dönen satır sayısı 0 ise (eşleşme yoksa yani)
             console.log("There is no such user exist!!");
             // postman havada kalıyor res.status ekle
+            res.status(404).json({
+                message: "There is no such user",
+                user: {email},
+                auth: false
+            });
             return;
         }
         else{
-            //const storedHashedPassword = await pool.query('SELECT password FROM "User" WHERE email = $1', [email]); // DB'deki kaydettiğimiz hashlenmiş şifreyi alıyoruz
             const isMatch = await bcrypt.compare(password,userInfo.rows[0].password); // kullanıcının girdiği şifre ile dbdeki şifre eşleşiyor mu kontrol ediyoruz
             if(isMatch){ // eşleşme varsa
                 console.log("Password matched!");
+
+                let jwtSecretKey = process.env.JWT_SECRET;
+                let data = {
+                    email: [userInfo.rows[0].email]
+                }
+                const token = jwt.sign(data, jwtSecretKey);
+
                 res.status(200).json({ // kodları araştır düzetl
                 message: "Succesfully logined",
                 user: {email},
-                auth: true
+                auth: true,
+                generatedToken: token
             });
             }else{ // eşleşme yoksa
                 console.log("Password didn't match :c");
-                res.status(404).json({ // kodları araştır düzelt
-                message: "Couldn't logined",
+                res.status(401).json({ 
+                message: "Wrong password",
                 user: {email},
                 auth: false
             });
@@ -51,9 +67,8 @@ const login = async (req, res) => {
         
         
     }catch(error){
-        console.log("TRY bloğu çalışmadı");
         console.error(error);
-        res.status(401).json({error: "IDK man"});
+        res.status(500).json({error: "Server error"});
     }
     
 };
