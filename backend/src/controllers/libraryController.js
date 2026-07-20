@@ -22,9 +22,22 @@ const addToMyLibrary = async (req, res) => {
         console.error(error.message);
         res.status(500).json({error: "Abi senin kitabi ekleyemedik puh"});
     }
-}
+};
+
+const deleteFromLibrary = async (req, res) => {
+    const {bookID} = req.params; // postlarda body içinden req.body ile alıyoduk, burda URL'den alırken params kullanıyoz
+    const email = req.user.email;
+    try{
+        const result = await pool.query('DELETE FROM "Add_in_library" WHERE "userEmail" = $1 AND "bookID" = $2', [email, bookID]);
+        res.status(200).json({deleted_book: result.rows});
+    } catch(error){
+        console.error(error.message);
+        res.status(500).json({error: "Abi senin kitabi silemedik ya kb"});
+    }
+};
 
 module.exports = {
     getMyLibrary,
-    addToMyLibrary
+    addToMyLibrary,
+    deleteFromLibrary
 };
