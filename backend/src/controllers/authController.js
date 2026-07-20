@@ -44,7 +44,8 @@ const login = async (req, res) => {
                 console.log("Password matched!");
 
                 let jwtSecretKey = process.env.JWT_SECRET;
-                let data = {
+                let data = { // tokene gömülen data burası
+                    username: userInfo.rows[0].username,
                     email: userInfo.rows[0].email
                 }
                 const token = jwt.sign(data, jwtSecretKey);
