@@ -7,7 +7,7 @@ require("dotenv").config();
 
 app.use(express.json()); // gelen json verileri okuyor
 app.use("/api/auth", authRoutes); // gelen istek /api/auth ile başlıyorsa authRoutes'e yolluyor bu isteği
-app.use("/api/mylib", libraryRoutes); // librarye istek gelirse
+app.use("/api/library", libraryRoutes); // librarye istek gelirse
 
 const port = process.env.PORT || 3000; // backendin çalıştığı port
 
