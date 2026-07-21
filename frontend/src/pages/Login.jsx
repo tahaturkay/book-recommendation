@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import loginRequest from "../services/authService";
 
 function Login(){
 
@@ -9,9 +10,17 @@ function Login(){
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setMessage("Giriş yapiliyo abe");
-    }
+        
+        try{
+            const data = await loginRequest(email,password);
+            localStorage.setItem('jwt_token', data.generatedToken); // gelen cevabın içinden tokeni ayrıştırıyoruz
+            setMessage('Giriş Başarılı! VİP bilekliğin takıldı.');
+        }catch(error){
+            setMessage('Abu sifre fln yanlis glb');
+            console.error(error);
+        }
 
+    }
 return (
 <div style={{ padding: '50px', maxWidth: '400px', margin: '0 auto'}}>
 Login
