@@ -28,7 +28,7 @@ const deleteFromLibrary = async (req, res) => {
     const {bookID} = req.params; // postlarda body içinden req.body ile alıyoduk, burda URL'den alırken params kullanıyoz
     const email = req.user.email;
     try{
-        const result = await pool.query('DELETE FROM "Add_in_library" WHERE "userEmail" = $1 AND "bookID" = $2', [email, bookID]);
+        const result = await pool.query('DELETE FROM "Add_in_library" WHERE "userEmail" = $1 AND "bookID" = $2 RETURNING *', [email, bookID]); // returning yapınca silineni bize printliyo
         res.status(200).json({deleted_book: result.rows});
     } catch(error){
         console.error(error.message);
