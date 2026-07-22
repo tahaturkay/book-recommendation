@@ -30,32 +30,32 @@ Login
   {/* Form onSubmit ile tetikleyici fonksiyonumuzu bağlıyoruz */}
     <form onSubmit={handleLogin}>
     
-    <div style={{ marginBottom: '15px' }}>
-        <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-      {/* 2. KLAVYE DİNLEYİCİSİ: value ve onChange ikilisi */}
-        <input 
-            type="email" 
-            value={email} // Kutunun içindeki yazı = bizim hafızamızdaki email
-            onChange={(e) => setEmail(e.target.value)} // Klavyede her tuşa basıldığında hafızayı güncelle
-            required 
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-        />
-    </div>
+        <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
+        {/* 2. KLAVYE DİNLEYİCİSİ: value ve onChange ikilisi */}
+            <input 
+                type="email" 
+                value={email} // Kutunun içindeki yazı = bizim hafızamızdaki email
+                onChange={(e) => setEmail(e.target.value)} // Klavyede her tuşa basıldığında hafızayı güncelle
+                required 
+                style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+            />
+        </div>
 
-    <div style={{ marginBottom: '15px' }}>
-        <label style={{ display: 'block', marginBottom: '5px' }}>Şifre:</label>
-        <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-        />
-    </div>
+        <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Şifre:</label>
+            <input 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+            />
+        </div>
 
-    <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer', background: '#0b57d0', color: 'white', border: 'none', borderRadius: '5px' }}>
-        Giriş
-    </button>
+        <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer', background: '#0b57d0', color: 'white', border: 'none', borderRadius: '5px' }}>
+            Giriş
+        </button>
     </form>
 
 </div>

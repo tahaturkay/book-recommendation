@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {registerRequest} from "../services/authService";
+import { useNavigate } from "react-router-dom";
 
 function Register(){
 
@@ -9,12 +10,17 @@ function Register(){
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState(''); // bu sadece ekranda info vermek için
 
+    const navigate = useNavigate(); // navigate fonksiyonu oluşturduk
+
     const handleRegister = async (e) => {
         e.preventDefault();
         
         try{
             const data = await registerRequest(username, email, password);
             setMessage('Kayit basarili');
+            setTimeout(() => {
+                navigate('/login'); 
+            }, 1500); // 2000 milisaniye = 2 saniye
         }catch(error){
             setMessage('Abu senn hesap olusmadi fln yanlis glb');
             console.error(error);
