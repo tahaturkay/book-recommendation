@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {loginRequest} from "../services/authService";
+import { useNavigate } from "react-router-dom"; // 1. EKLENDİ: Yönlendirme kancasını içeri al
 
 function Login(){
 
@@ -15,6 +16,9 @@ function Login(){
             const data = await loginRequest(email,password);
             localStorage.setItem('jwt_token', data.generatedToken); // gelen cevabın içinden tokeni ayrıştırıyoruz
             setMessage("Abii girdiler abiiii");
+            setTimeout(() => {
+                navigate('/main'); 
+            }, 1500); // 2000 milisaniye = 2 saniye
         }catch(error){
             setMessage('Abu sifre fln yanlis glb');
             console.error(error);

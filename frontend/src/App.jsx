@@ -1,20 +1,22 @@
 import React, { useState } from "react";
 import Login from "./pages/login";
 import Register from "./pages/register";
+import Main from "./pages/main";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
 function App() {
   return(
     <Router>
       <Routes>
-        {/* Kullanıcı /login adresine giderse Login sayfasını göster */}
+        {/* /login adresinde login gösteriliyor */}
         <Route path="/login" element={<Login />} />
         
-        {/* Kullanıcı /register adresine giderse Register sayfasını göster */}
+        {/* /register adresi */}
         <Route path="/register" element={<Register />} />
+
+        {/* /main adresi */}
+        <Route path="/main" element = {<Main />} />
         
-        {/* Ana sayfaya (/) gelirse şimdilik doğrudan login'e yönlendir (Navigate) */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );
