@@ -1,4 +1,4 @@
-async function getBooksRequest(page = 1) {
+async function getBooksRequest(page = 1, searchQuery = "") {
   try {
     // localStorage ye kaydedilen tokeni çıkar
     const token = localStorage.getItem('jwt_token');
@@ -9,7 +9,8 @@ async function getBooksRequest(page = 1) {
     }
 
     // "Bearer <token>" ekleyerek backende istek fırlattık görüntülemek için
-    const response = await fetch(`http://localhost:3000/api/main/main-books?page=${page}`, {
+    // burda ayrıyeten fetchlerken parametreleri de bakcende sallıyoruz
+    const response = await fetch(`http://localhost:3000/api/main/main-books?page=${page}&search=${searchQuery}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
