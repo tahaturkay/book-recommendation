@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BookCard from '../components/BookCard';
-import { getBooksRequest } from '../services/mainService';
+import BookShelf from '../components/bookShelf';
+import { getBooksRequest, getCategoriesRequest } from '../services/mainService';
 
 function main() { // başta hafızalar oluşturuyoz
     const [books, setBooks] = useState([]);
@@ -14,7 +15,25 @@ function main() { // başta hafızalar oluşturuyoz
     const [searchInput, setSearchInput] = useState(''); // Kullanıcının o an yazdığı metin
     const [activeSearch, setActiveSearch] = useState(''); // arama butonuna basıldığında kesinleşen metin
 
+    // 2. YENİ EKLENEN HAFIZALAR (State'ler)
+    const [categories, setCategories] = useState([]); // Backend'den gelen kategoriler
+    const [activeCategory, setActiveCategory] = useState(''); // Kullanıcının tıkladığı kategori
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Sol menü açık mı kapalı mı?
+
     const navigate = useNavigate();
+
+    // 3. YENİ: Sayfa ilk açıldığında Kategorileri SADECE BİR KERE çek
+    useEffect(() => {
+        const fetchCategories = async () => {
+        try {
+            const data = await getCategoriesRequest();
+            setCategories(data.categories);
+        } catch (err) {
+            console.error("Kategoriler çekilemedi:", err);
+        }
+        };
+        fetchCategories();
+    }, []);
 
     // useEffect: Sayfa ilk açıldığında veya currentPage değiştiğinde bu bloğu çalıştırır
     useEffect(() => {
@@ -22,7 +41,7 @@ function main() { // başta hafızalar oluşturuyoz
         setIsLoading(true);
         setError('');
         try {
-            const data = await getBooksRequest(currentPage, activeSearch);
+            const data = await getBooksRequest(currentPage, activeSearch, activeCategory);
             setBooks(data.books);
             setTotalPages(data.totalPages);
         } catch (err) {
@@ -37,7 +56,7 @@ function main() { // başta hafızalar oluşturuyoz
     };
 
         fetchBooks();
-    }, [currentPage, activeSearch, navigate]); // Bu dizideki (dependency array) değerler değiştiğinde fetchBooks tekrar çalışır
+    }, [currentPage, activeSearch, activeCategory, navigate]); // Bu dizideki (dependency array) değerler değiştiğinde fetchBooks tekrar çalışır
 
     // arama butonu fonksiyonu
     const handleSearchSubmit = (e) => {
@@ -58,9 +77,59 @@ function main() { // başta hafızalar oluşturuyoz
     return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
     
-      {/* Üst Kısım: başlık, arama butonu ve kütüphane butonu */}
+        {/* YENİ: SIDEBAR OVERLAY (Arka planı karartma ekranı) */}
+        {isSidebarOpen && (
+            <div 
+            onClick={() => setIsSidebarOpen(false)} 
+            style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999 }}
+            ></div>
+        )}
+
+        {/* YENİ: KAYAR SIDEBAR MENÜSÜ */}
+        <div style={{ 
+            position: 'fixed', top: 0, 
+            left: isSidebarOpen ? '0' : '-300px', // Menü açıksa solda 0, kapalıysa ekran dışında (-300px) durur!
+            width: '260px', height: '100vh', backgroundColor: '#fff', boxShadow: '2px 0 10px rgba(0,0,0,0.2)', 
+            zIndex: 1000, transition: 'left 0.3s ease', overflowY: 'auto', padding: '20px'
+        }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                <h2 style={{ margin: 0, color: '#0b57d0' }}>Kategoriler</h2>
+                <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✖</button>
+            </div>
+            
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {/* Tüm Kitaplar (Sıfırlama) Butonu */}
+            <li 
+                onClick={() => { setActiveCategory(''); setIsSidebarOpen(false); setCurrentPage(1); }}
+                style={{ padding: '12px', cursor: 'pointer', borderRadius: '8px', marginBottom: '5px', transition: '0.2s', backgroundColor: activeCategory === '' ? '#f0f4f9' : 'transparent', fontWeight: activeCategory === '' ? 'bold' : 'normal', color: activeCategory === '' ? '#0b57d0' : '#333' }}
+            >
+                📚 Tüm Kitaplar
+            </li>
+            
+            {/* Backend'den gelen kategoriler */}
+            {categories.map((cat, idx) => (
+                <li 
+                key={idx} 
+                onClick={() => { setActiveCategory(cat); setIsSidebarOpen(false); setCurrentPage(1); }}
+                style={{ padding: '12px', cursor: 'pointer', borderRadius: '8px', marginBottom: '5px', transition: '0.2s', backgroundColor: activeCategory === cat ? '#f0f4f9' : 'transparent', fontWeight: activeCategory === cat ? 'bold' : 'normal', color: activeCategory === cat ? '#0b57d0' : '#555' }}
+                >
+                🏷️ {cat}
+                </li>
+            ))}
+            </ul>
+        </div>
+        
+        {/* Üst Kısım: başlık, arama butonu ve kütüphane butonu */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
             <h2> Aktaşlar Sahafcılık 2024'den beri</h2>
+
+            {/* YENİ: Hamburger İkonu ve Başlık Yan Yana */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <button onClick={() => setIsSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', color: '#333' }} title="Kategoriler">
+                    ☰
+                </button>
+                <h2 style={{ margin: 0 }}>📚 Kitap Keşfi</h2>
+            </div>
 
             {/*  arama çubuğu */}
             <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px' }}>
@@ -82,7 +151,12 @@ function main() { // başta hafızalar oluşturuyoz
                     </button>
                 )}
             </form>
-
+            {!activeSearch && !activeCategory && <BookShelf />}
+            <hr style={{ border: 'none', borderTop: '1px solid #eee', marginBottom: '30px' }} />
+            <h3 style={{ fontSize: '24px', margin: '0 0 20px 0', color: '#333' }}>
+                {/* Başlığı da dinamik yaptık */}
+                {activeSearch ? `"${activeSearch}" araması` : (activeCategory ? `🏷️ ${activeCategory} Kitapları` : 'Tüm Kitaplar')}
+            </h3>
             {/* kütüphane açma butonu */}
             <button style={{ padding: '10px 15px', borderRadius: '8px', border: 'none', backgroundColor: '#333', color: 'white', cursor: 'pointer' }}>
             Kütüphanemi Aç (Şimdi değil ama abi)
@@ -102,10 +176,22 @@ function main() { // başta hafızalar oluşturuyoz
                 animation: shimmer 1.5s infinite;
                 border-radius: 4px;
             }
+                /* 2. EKLENDİ: Yatay kaydırma çubuğunu Chrome/Safari'de görsel olarak gizlemek için */
+            .hide-scroll::-webkit-scrollbar {
+                display: none;
+            }
             `}
         </style>
     
-    
+        {/* 3. EKLENDİ: Ana kitap ızgarasından önce "Önerilenler Rafı"nı çağır */}
+        {/* Eğer arama yapılmıyorsa önerileri göster, arama yapılıyorsa sadece sonuçları göster mantığı da kurabiliriz ama şimdilik hep gösterelim */}
+        {!activeSearch && <BookShelf />}
+        
+        <hr style={{ border: 'none', borderTop: '1px solid #eee', marginBottom: '30px' }} />
+        
+        <h3 style={{ fontSize: '24px', margin: '0 0 20px 0', color: '#333' }}>
+            {activeSearch ? `"${activeSearch}" için sonuçlar` : 'Tüm Kitaplar'}
+        </h3>
     
         {/* İSKELET KART - - - - 8 adet iskelet kartı gösterimi */}
         {isLoading && (
@@ -135,7 +221,8 @@ function main() { // başta hafızalar oluşturuyoz
             </div>
         )}
 
-        {error && <p style={{ color: 'red' }}>Hata: {error}</p>}
+        {/* ekrana error olursa onu yazdırıyoruz */}
+        {error && <p style={{ color: 'red' }}>Hata: {error}</p>} 
 
         {/* Kitaplar Izgarası (Grid: Yanyana 4, alt alta 2 kitap) */}
         {!isLoading && !error && (
