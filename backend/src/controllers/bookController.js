@@ -2,42 +2,43 @@ const pool = require("../config/db"); // dbye erişim
 
 const getBooks = async (req, res) => {
     try{
-        // frontend'den gelen sayfa numarasını al (varsayılan 1)
-        const page = parseInt(req.query.page) || 1;
+        // urlde "?" den sonrasi querymiş, express bunu json formatına getiriyo, ordan değerleri çekiyoruz
+        const page = parseInt(req.query.page) || 1; // page: anahtarı ile sayfayı çekiyoruz
         const limit = 8; // her sayfada 8 kitap
         const offset = (page - 1) * limit; // atlanacak kitap sayısı
 
-        const search = req.query.search || ""; // arama kelimesi frontendden gelen
-        const category = req.query.category || ""; // kategori frontendden gelen
+        const search = req.query.search || ""; // arama parametresini çekiyoruz urlden
+        const category = req.query.category || ""; // kategori parametresini çekiyoruz urlden
 
         
-        // Dinamik SQL Sorgusu Oluşturma (Çok havalı bir yöntemdir!)
+        // dinmakik sql sorgusu oluşturma
         let queryText = 'SELECT * FROM "Book" WHERE 1=1';
         let countText = 'SELECT COUNT(*) FROM "Book" WHERE 1=1';
         const queryParams = [];
-        let paramCount = 1;
+        let paramCount = 1; // parametrelerin gelmesi için yer tutuculuk yapacak
 
+        // aramayı sorguya ekleme
         if (search) {
             queryText += ` AND ("title" ILIKE $${paramCount} OR "author" ILIKE $${paramCount})`;
             countText += ` AND ("title" ILIKE $${paramCount} OR "author" ILIKE $${paramCount})`;
             queryParams.push(`%${search}%`);
-            paramCount++;
+            paramCount++; // yer tutucuyu artırıyoruz
         }
 
-        // YENİ EKLENEN: Kategori filtresi
+        // kategoriyi sorguya ekleme
         if (category) {
             queryText += ` AND "category" = $${paramCount}`;
             countText += ` AND "category" = $${paramCount}`;
             queryParams.push(category);
-            paramCount++;
+            paramCount++; // yer tutucuyu artırıyoruz
         }
 
         // Sıralama ve sayfalama ekleniyor
         queryText += ` ORDER BY "bookID" ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
         
-        // Son sorguyu çalıştır (Örn: parametrelerin arkasına limit ve offset eklenmiş hali)
+        // burda sorguyu yapıyoruz
         const books = await pool.query(queryText, [...queryParams, limit, offset]);
-        const totalCount = await pool.query(countText, queryParams);
+        const totalCount = await pool.query(countText, [...queryParams]);
 
         res.status(200).json({
             books: books.rows,
@@ -78,10 +79,10 @@ const getTopRecommendedBooks = async (req, res) => {
 };
 
 
-// YENİ EKLENEN: Veritabanındaki tüm benzersiz kategorileri getiren fonksiyon
+// Veritabanındaki tüm benzersiz kategorileri getiren fonksiyon
 const getCategories = async (req, res) => {
     try {
-        // DISTINCT: Tekrar edenleri teke düşürür (Örn: 50 tane Distopya varsa, sadece 1 kere 'Distopya' döner)
+        // tekrar edenleri teke düşür
         const result = await pool.query('SELECT DISTINCT category FROM "Book" WHERE category IS NOT NULL ORDER BY category ASC');
         
         // Sadece kategori isimlerini içeren basit bir dizi (array) dönelim
