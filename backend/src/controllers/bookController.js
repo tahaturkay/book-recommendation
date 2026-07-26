@@ -9,7 +9,7 @@ const getBooks = async (req, res) => {
 
         const search = req.query.search || ""; // arama parametresini çekiyoruz urlden
         const category = req.query.category || ""; // kategori parametresini çekiyoruz urlden
-
+        console.log("fronttan gelen kategori", category); // test etmek için
         
         // dinmakik sql sorgusu oluşturma
         let queryText = 'SELECT * FROM "Book" WHERE 1=1';
