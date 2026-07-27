@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BookCard from '../components/bookCard';
 import BookShelf from '../components/bookShelf'; // DİKKAT: B ve S büyük harf olmalı!
+import LibraryBookCard from '../components/libraryBookCard';
 import { getBooksRequest, getCategoriesRequest } from '../services/mainService';
 import { getMyLibraryRequest, removeFromLibraryRequest } from '../services/libraryService';
 
@@ -155,7 +156,7 @@ function Main() {
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <h2 style={{ margin: 0, color: '#333' }}>📖 Kütüphanem</h2>
-                    <button onClick={() => setIsLibraryOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✖</button>
+                    <button onClick={() => setIsLibraryOpen(false)} style={{ background: 'none', backgroundColor: '#ffaaaa',  border: 'none', fontSize: '20px', cursor: 'pointer' }}>x</button>
                 </div>
                 
                 <hr style={{ border: 'none', borderTop: '1px solid #ddd', marginBottom: '20px' }} />
@@ -175,10 +176,9 @@ function Main() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', paddingBottom: '30px' }}>
                         {libraryBooks.map((book) => (
                             // YENİ KARTIMIZI KULLANIYORUZ: isLibraryMode=true diyerek Çöp Kutusunu çıkarıyoruz
-                            <BookCard 
+                            <LibraryBookCard 
                                 key={book.bookID} 
-                                book={book} 
-                                isLibraryMode={true} 
+                                book={book}
                                 onRemove={handleLibraryBookRemoved} 
                             />
                         ))}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { addToLibraryRequest, removeFromLibraryRequest } from '../services/libraryService';
+import { addToLibraryRequest } from '../services/libraryService';
 
-function BookCard({ book, isLibraryMode = false, onRemove}) { // book parametresi ile backendden gelen kitabı alıyor
+function BookCard({ book }) { // book parametresi ile backendden gelen kitabı alıyor
   const [isHovered, setIsHovered] = useState(false); // hover durumu kontrol(kart üstü)
 
   // Kütüphaneye ekle butonuna basılınca çalışacak fonksiyon
@@ -63,7 +63,7 @@ function BookCard({ book, isLibraryMode = false, onRemove}) { // book parametres
       {/* Hover olduğunda çıkan (+) Kütüphaneye Ekle Butonu */}
       {isHovered && (
         <button 
-          onClick={isLibraryMode ? handleRemoveFromLibrary : handleAddToLibrary} // eğer kitaplık modundaysa "X" butonu değilse "+" butonu olacak
+          onClick={handleAddToLibrary} // eğer kitaplık modundaysa "X" butonu değilse "+" butonu olacak
           style={{
             position: 'absolute',
             top: '10px',
@@ -83,7 +83,7 @@ function BookCard({ book, isLibraryMode = false, onRemove}) { // book parametres
             title: 'Kütüphaneme Ekle'
           }}
         >
-          {isLibraryMode ? "X" : "+"}
+          +
         </button>
       )}
     </div>

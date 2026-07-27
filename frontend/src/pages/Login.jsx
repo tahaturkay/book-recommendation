@@ -9,6 +9,8 @@ function Login(){
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState(''); // bu sadece ekranda info vermek için
 
+    const navigate = useNavigate(); // navigate fonksiyonu oluşturduk
+    
     const handleLogin = async (e) => {
         e.preventDefault();
         
