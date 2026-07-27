@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import BookCard from '../components/bookCard';
 import BookShelf from '../components/bookShelf'; // DİKKAT: B ve S büyük harf olmalı!
 import { getBooksRequest, getCategoriesRequest } from '../services/mainService';
+import { getMyLibraryRequest } from '../services/libraryService';
+
 
 // DİKKAT: Fonksiyon adı büyük 'M' ile başlamalı
 function Main() { 
@@ -19,8 +21,14 @@ function Main() {
     const [activeCategory, setActiveCategory] = useState(''); 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
 
+    // YENİ HAFIZALAR: Kütüphane Çekmecesi İçin
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const [libraryBooks, setLibraryBooks] = useState([]);
+    const [isLibraryLoading, setIsLibraryLoading] = useState(false);
+
     const navigate = useNavigate();
 
+    // kategorileri çekme
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -33,6 +41,7 @@ function Main() {
         fetchCategories();
     }, []);
 
+    // kitapları çekme
     useEffect(() => {
         const fetchBooks = async () => {
             setIsLoading(true);
@@ -54,6 +63,32 @@ function Main() {
         fetchBooks();
     }, [currentPage, activeSearch, activeCategory, navigate]); 
 
+    // YENİ: KÜTÜPHANEYİ ÇEKME (Sadece çekmece açıldığında çalışır)
+    useEffect(() => {
+        if (isLibraryOpen) {
+            const fetchLibrary = async () => {
+                setIsLibraryLoading(true);
+                try {
+                    const myBooks = await getMyLibraryRequest();
+                    setLibraryBooks(myBooks);
+                } catch (err) {
+                    console.error("Kütüphane yüklenemedi:", err);
+                    if (err.message.includes('Giriş') || err.message.includes('Token')) {
+                        navigate('/login');
+                    }
+                } finally {
+                    setIsLibraryLoading(false);
+                }
+            };
+            fetchLibrary();
+        }
+    }, [isLibraryOpen, navigate]);
+
+    // Kütüphaneden kitap silindiğinde anında ekrandan kaybetme
+    const handleLibraryBookRemoved = (removedBookID) => {
+        setLibraryBooks((prevBooks) => prevBooks.filter(book => book.bookID !== removedBookID));
+    };
+
     const handleSearchSubmit = (e) => {
         e.preventDefault(); 
         setCurrentPage(1); 
@@ -72,14 +107,14 @@ function Main() {
         <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
     
             {/* SIDEBAR OVERLAY */}
-            {isSidebarOpen && (
+            {(isSidebarOpen || isLibraryOpen) && (
                 <div 
                     onClick={() => setIsSidebarOpen(false)} 
                     style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999 }}
                 ></div>
             )}
 
-            {/* KAYAR SIDEBAR MENÜSÜ */}
+            {/* KAYAR SIDEBAR MENÜSÜ  SOL */}
             <div style={{ 
                 position: 'fixed', top: 0, 
                 left: isSidebarOpen ? '0' : '-300px', 
@@ -110,7 +145,47 @@ function Main() {
                     ))}
                 </ul>
             </div>
-        
+            
+            {/* YENİ - SAĞ ÇEKMECE: KÜTÜPHANEM MENÜSÜ */}
+            <div style={{ 
+                position: 'fixed', top: 0, right: isLibraryOpen ? '0' : '-350px', 
+                width: '300px', height: '100vh', backgroundColor: '#f8f9fa', boxShadow: '-2px 0 15px rgba(0,0,0,0.3)', 
+                zIndex: 1000, transition: 'right 0.3s ease', overflowY: 'auto', padding: '20px',
+                display: 'flex', flexDirection: 'column'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h2 style={{ margin: 0, color: '#333' }}>📖 Kütüphanem</h2>
+                    <button onClick={() => setIsLibraryOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✖</button>
+                </div>
+                
+                <hr style={{ border: 'none', borderTop: '1px solid #ddd', marginBottom: '20px' }} />
+
+                {/* Kütüphane İçeriği */}
+                {isLibraryLoading && <p style={{ textAlign: 'center', color: '#666' }}>Kütüphane yükleniyor...</p>}
+                
+                {!isLibraryLoading && libraryBooks.length === 0 && (
+                    <div style={{ textAlign: 'center', color: '#666', marginTop: '40px' }}>
+                        <p style={{ fontSize: '40px', margin: '0 0 10px 0' }}>📭</p>
+                        <p>Kütüphanen bomboş.</p>
+                        <p style={{ fontSize: '13px' }}>Hemen vitrinden kitap ekle!</p>
+                    </div>
+                )}
+
+                {!isLibraryLoading && libraryBooks.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', paddingBottom: '30px' }}>
+                        {libraryBooks.map((book) => (
+                            // YENİ KARTIMIZI KULLANIYORUZ: isLibraryMode=true diyerek Çöp Kutusunu çıkarıyoruz
+                            <BookCard 
+                                key={book.bookID} 
+                                book={book} 
+                                isLibraryMode={true} 
+                                onRemove={handleLibraryBookRemoved} 
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+
             {/* ÜST KISIM (HEADER): Flexbox Sadece Bu Kutuyu Etkiler */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                 
@@ -140,7 +215,7 @@ function Main() {
                     )}
                 </form>
 
-                <button style={{ padding: '10px 15px', borderRadius: '8px', border: 'none', backgroundColor: '#333', color: 'white', cursor: 'pointer' }}>
+                <button type="button" onClick={() => setIsLibraryOpen(true) } style={{ padding: '10px 15px', borderRadius: '8px', border: 'none', backgroundColor: '#333', color: 'white', cursor: 'pointer' }}>
                     Kütüphanemi Aç
                 </button>
             </div>
@@ -237,4 +312,4 @@ function Main() {
     );
 }
 
-export default Main; // DİKKAT: Büyük 'M' olmalı
+export default Main; // büyük m olmayınca react bunu html tagı sanıyomuş
