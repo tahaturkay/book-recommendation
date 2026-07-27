@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BookCard from '../components/bookCard';
 import BookShelf from '../components/bookShelf'; // DİKKAT: B ve S büyük harf olmalı!
 import { getBooksRequest, getCategoriesRequest } from '../services/mainService';
-import { getMyLibraryRequest } from '../services/libraryService';
+import { getMyLibraryRequest, removeFromLibraryRequest } from '../services/libraryService';
 
 
 // DİKKAT: Fonksiyon adı büyük 'M' ile başlamalı

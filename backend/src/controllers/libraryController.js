@@ -4,7 +4,7 @@ const getMyLibrary = async (req,res) => {
     const email = req.user.email;
     try{
         //const result = await pool.query('SELECT * FROM "Add_in_library" where "userEmail" = $1', [email]);
-        const result = await pool.query('SELECT "Book"."title", "Book"."author", "Book"."category", "Book"."published_year", "Book"."publisher", "Book"."imageURL", "Book"."rating" FROM "Book" JOIN "Add_in_library" ON "Book"."bookID" = "Add_in_library"."bookID" WHERE "Add_in_library"."userEmail" = $1', [email]);
+        const result = await pool.query('SELECT "Book"."bookID", "Book"."title", "Book"."author", "Book"."category", "Book"."published_year", "Book"."publisher", "Book"."imageURL", "Book"."rating" FROM "Book" JOIN "Add_in_library" ON "Book"."bookID" = "Add_in_library"."bookID" WHERE "Add_in_library"."userEmail" = $1', [email]);
         res.status(200).json({books_owners: result.rows});
     } catch(error){
         console.error(error.message);
@@ -26,6 +26,7 @@ const addToMyLibrary = async (req, res) => {
 
 const deleteFromLibrary = async (req, res) => {
     const {bookID} = req.params; // postlarda body içinden req.body ile alıyoduk, burda URL'den alırken params kullanıyoz
+    console.log("kitap idsi: ",bookID);
     const email = req.user.email;
     try{
         const result = await pool.query('DELETE FROM "Add_in_library" WHERE "userEmail" = $1 AND "bookID" = $2 RETURNING *', [email, bookID]); // returning yapınca silineni bize printliyo
