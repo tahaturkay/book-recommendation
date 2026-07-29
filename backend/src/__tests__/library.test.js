@@ -36,7 +36,7 @@ describe('Library Controller Unit Tests', () => {
 
     // KUTUPHANEDEKI KITAPLARI LISTELEME
     describe('GET /api/library/display', () => {
-        it('SHOULD DISPLAY BOOKS WITH SPECIFIED PAGE NUM ', async () => {
+        it('SHOULD DISPLAY BOOKS IN MY LIBRARY ', async () => {
 
             // Veritabanından iki tane sahte kitap dönsün
             pool.query.mockResolvedValueOnce({
