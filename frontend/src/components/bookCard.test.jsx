@@ -2,10 +2,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import BookCard from './bookCard';
 
-// Kütüphane servislerini mockluyoruz (Çünkü kartın içindeki 'Ekle' ve 'Sil' fonksiyonları Backend'e istek atıyor. Testte gerçek istek atmamalıyız!)
+// kütüphane servislerini mockluyoruz
+// çünkü kartın içindeki ekle ve sil fonksiyonları Backend'e istek atıyor
 vi.mock('../services/libraryService', () => ({
     addToLibraryRequest: vi.fn(),
-    removeFromLibraryRequest: vi.fn()
 }));
 
 describe('BookCard Component', () => {
@@ -30,7 +30,8 @@ describe('BookCard Component', () => {
         expect(screen.getByText('Frank Herbert')).toBeInTheDocument();
         expect(screen.getByText('1965')).toBeInTheDocument();
         
-        // screen.debug(); // Ekranda şu an ne çizildiğini terminalde görmek istersen bu yorum satırını açabilirsin!
+        screen.debug(); // Ekranda şu an ne çizildiğini terminalde görmek istersen bu yorum satırını açabilirsin!
     });
 
+    
 });
