@@ -5,6 +5,8 @@ const pool = require("./config/db"); // Database dosyasına erişim.
 const authRoutes = require("./routes/authRoutes");
 const libraryRoutes = require("./routes/libraryRoutes");
 const mainRoutes = require("./routes/mainRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+
 
 require("dotenv").config(); 
 
@@ -13,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors()); // farklı portlarda çalışan frontend ve backend sıkıntı çıkarmasın diye
 app.use("/api/auth", authRoutes); // gelen istek /api/auth ile başlıyorsa authRoutes'e yolluyor bu isteği
 app.use("/api/library", libraryRoutes); // librarye istek gelirse
-app.use("/api/main", mainRoutes); // maine istek gelirse
+app.use("/api/reviews", reviewRoutes); // maine istek gelirse
 
 const port = process.env.PORT || 3000; // backendin çalıştığı port
 
