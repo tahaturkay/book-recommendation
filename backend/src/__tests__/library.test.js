@@ -81,8 +81,20 @@ describe('Library Controller Unit Tests', () => {
     
     // KUTUPHANEDEN KITAP SILME
     describe('DELETE /api/library/remove', () => {
-        it('ADD BOOK TO THE LIBRARY ', async () => {
-            // TODO
+        it('DELETE BOOK FROM LIBRARY ', async () => {
+        // Veritabanından iki tane sahte kitap dönsün
+            pool.query.mockResolvedValueOnce({
+                rows: [
+                    { bookID: 3, email: 'test@vip.com' }
+                ]
+            });
+            // postmandeki istek mantığı
+            const response = await request(app).delete('/api/library/remove/3');
+
+            // Beklentiler (Assertions)
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty('deleted_book');
+            expect(response.body.deleted_book[0].bookID).toBe(3);
         });
     });
 });
