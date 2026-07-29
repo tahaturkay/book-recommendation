@@ -1,0 +1,1 @@
+import '@testing-library/jest-dom'; // Ekranda bir element var mı yok mu gibi kontrolleri yapmamızı sağlar
