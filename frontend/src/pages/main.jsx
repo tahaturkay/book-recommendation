@@ -5,6 +5,7 @@ import BookShelf from '../components/bookShelf'; // DİKKAT: B ve S büyük harf
 import LibraryBookCard from '../components/libraryBookCard';
 import { getBooksRequest, getCategoriesRequest } from '../services/mainService';
 import { getMyLibraryRequest, removeFromLibraryRequest } from '../services/libraryService';
+import ReviewModal from '../components/reviewModal'; // YENİ EKLENDİ
 
 
 // DİKKAT: Fonksiyon adı büyük 'M' ile başlamalı
@@ -27,7 +28,19 @@ function Main() {
     const [libraryBooks, setLibraryBooks] = useState([]);
     const [isLibraryLoading, setIsLibraryLoading] = useState(false);
 
+    // YENİ HAFIZALAR: Review Modal İçin
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [selectedBookForReview, setSelectedBookForReview] = useState(null);
+    const [canWriteReview, setCanWriteReview] = useState(false);
+
     const navigate = useNavigate();
+
+    // KART TIKLANINCA ÇALIŞACAK FONKSİYON
+    const handleCardClick = (book, fromLibrary = false) => {
+        setSelectedBookForReview(book);
+        setCanWriteReview(fromLibrary);
+        setIsReviewModalOpen(true);
+    };
 
     // kategorileri çekme
     useEffect(() => {
@@ -110,7 +123,7 @@ function Main() {
             {/* SIDEBAR OVERLAY */}
             {(isSidebarOpen || isLibraryOpen) && (
                 <div 
-                    onClick={() => setIsSidebarOpen(false)} 
+                    onClick={() => { setIsSidebarOpen(false); setIsLibraryOpen(false); }}   
                     style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999 }}
                 ></div>
             )}
@@ -179,7 +192,8 @@ function Main() {
                             <LibraryBookCard 
                                 key={book.bookID} 
                                 book={book}
-                                onRemove={handleLibraryBookRemoved} 
+                                onRemove={handleLibraryBookRemoved}
+                                onCardClick={(book) => handleCardClick(book, true)}
                             />
                         ))}
                     </div>
@@ -240,7 +254,7 @@ function Main() {
             </style>
     
             {/* ÖNERİLENLER RAFI (Sadece arama ve kategori seçilmediğinde görünür) */}
-            {!activeSearch && !activeCategory && <BookShelf />}
+            {!activeSearch && !activeCategory && <BookShelf onCardClick={(book) => handleCardClick(book, false)} />}
             
             <hr style={{ border: 'none', borderTop: '1px solid #eee', marginBottom: '30px' }} />
             
@@ -272,13 +286,17 @@ function Main() {
                 </div>
             )}
 
-            {error && <p style={{ color: 'red' }}>Hata: {error}</p>} 
+            {error && <p style={{ color:'red' }}>Hata: {error}</p>} 
 
             {/* KİTAPLAR IZGARASI */}
             {!isLoading && !error && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '30px', marginBottom: '40px' }}>
                     {books.map((book) => (
-                        <BookCard key={book.bookID} book={book} />
+                        <BookCard 
+                            key={book.bookID} 
+                            book={book}
+                            onCardClick={(book) => handleCardClick(book, false)}
+                        />
                     ))}
                 </div>
             )}
@@ -307,7 +325,13 @@ function Main() {
                     </button>
                 </div>
             )}
-
+            {/* MODAL BİLEŞENİ EN ALTA EKLENİYOR */}
+            <ReviewModal 
+                isOpen={isReviewModalOpen} 
+                onClose={() => setIsReviewModalOpen(false)} 
+                book={selectedBookForReview} 
+                canWriteReview={canWriteReview} 
+            />
         </div>
     );
 }

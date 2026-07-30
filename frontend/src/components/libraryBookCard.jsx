@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { removeFromLibraryRequest } from '../services/libraryService';
 
-function LibraryBookCard({ book, onRemove }) {
+function LibraryBookCard({ book, onRemove, onCardClick }) {
     const [isHovered, setIsHovered] = useState(false);
 
     // Kütüphaneden Silme Fonksiyonu
@@ -20,7 +20,8 @@ function LibraryBookCard({ book, onRemove }) {
     };
 
     return (
-        <div 
+        <div
+            onClick={() => onCardClick && onCardClick(book)}
             style={{ 
                 display: 'flex', 
                 alignItems: 'center', 

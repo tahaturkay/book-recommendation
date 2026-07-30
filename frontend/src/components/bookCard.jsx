@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { addToLibraryRequest } from '../services/libraryService';
 
-function BookCard({ book }) { // book parametresi ile backendden gelen kitabı alıyor
+function BookCard({ book, onCardClick }) { // book parametresi ile backendden gelen kitabı alıyor
   const [isHovered, setIsHovered] = useState(false); // hover durumu kontrol(kart üstü)
 
   // Kütüphaneye ekle butonuna basılınca çalışacak fonksiyon
@@ -32,6 +32,7 @@ function BookCard({ book }) { // book parametresi ile backendden gelen kitabı a
 
   return (
   <div
+  onClick={() => onCardClick && onCardClick(book)}
   style={{
   position: 'relative',
   width: '100%',

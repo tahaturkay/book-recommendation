@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import BookCard from './bookCard';
 import { getRecommendedBooksRequest } from '../services/mainService';
 
-function BookShelf() {
+function BookShelf({onCardClick}) {
     const [books, setBooks] = useState([]);
     const [page, setPage] = useState(1); // YENİ: Hangi sayfada olduğumuzu tutar
     const [hasMore, setHasMore] = useState(true); // YENİ: Daha fazla kitap var mı?
@@ -119,7 +119,7 @@ function BookShelf() {
             
             {isLoading ? skeletonBoxes : books.map((book) => (
             <div key={book.bookID} style={{ flex: '0 0 auto', scrollSnapAlign: 'start' }}>
-                <BookCard book={book} />
+                <BookCard book={book} onCardClick={onCardClick}/>
             </div>
             ))}
 
