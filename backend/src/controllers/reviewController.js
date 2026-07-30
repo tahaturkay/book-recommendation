@@ -17,7 +17,7 @@ const getBookReviews = async (req, res) => {
     const {bookID} = req.params; // postlarda body içinden req.body ile alıyoduk, burda URL'den alırken params kullanıyoz
 
     try{
-        const result = await pool.query('SELECT "Review"."comment", "Review"."rating", "User"."username" FROM "Review" JOIN  "User" ON "Review"."writes" = "User"."email" WHERE "Review"."has" = $1', [bookID]);
+        const result = await pool.query('SELECT "Review"."comment", "Review"."rating", "User"."username", "Review"."reviewID", "Review"."writes" FROM "Review" JOIN  "User" ON "Review"."writes" = "User"."email" WHERE "Review"."has" = $1', [bookID]);
         res.status(200).json({get_reviews: result.rows});
     } catch(error){
         console.error(error.message);
