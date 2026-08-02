@@ -6,16 +6,16 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const getAIRecommendations = async (req, res) => {
     try {
-        const email = req.user.email; // Güvenlik görevlisinden gelen kullanıcı bilgisi
+        const email = req.user.email; 
 
-        // 1. KULLANICIYI TANIYALIM (Veritabanından sevdiği kitapları çekelim)
-        // Burada 4 ve 5 yıldız verdiği kitapların isimlerini ve kategorilerini alıyoruz
+        // ====================================================================
+        // ADIM 1: KULLANICIYI TANI (Context Gathering)
+        // ====================================================================
         const userFavoritesQuery = `
-            SELECT b.title, b.category, b.author 
+            SELECT b."bookID", b.title, b.category, b.author 
             FROM "Review" r
             JOIN "Book" b ON r.has = b."bookID"
             WHERE r.writes = $1 AND r.rating >= 4
-            LIMIT 5
         `;
         const favoritesData = await pool.query(userFavoritesQuery, [email]);
         const favorites = favoritesData.rows;
@@ -24,50 +24,83 @@ const getAIRecommendations = async (req, res) => {
             return res.status(400).json({ error: "Sana öneri yapabilmem için önce birkaç kitaba (4-5 yıldız) puan vermelisin!" });
         }
 
-        // 2. KULLANICI PROFİLİNİ METNE DÖK
-        const favoriteListText = favorites.map(f => `${f.title} (${f.author} - ${f.category})`).join(', ');
+        // Kullanıcının sevdiği kategorileri, yazarları ve zaten okuduğu kitapların ID'lerini ayıklıyoruz
+        const readBookIds = favorites.map(f => f.bookID);
+        const favoriteCategories = [...new Set(favorites.map(f => f.category).filter(Boolean))];
+        const favoriteAuthors = [...new Set(favorites.map(f => f.author).filter(Boolean))];
+        const favoriteListText = favorites.map(f => f.title).join(', ');
 
-        // 3. YAPAY ZEKAYA TALİMAT (PROMPT) VER
-        // Dikkat: JSON formatında dönmesi için onu zorluyoruz!
+
+        // ====================================================================
+        // ADIM 2: R (RETRIEVAL) - KENDİ VERİTABANIMIZDAN KİTAP ÇEKME
+        // ====================================================================
+        // Kullanıcının sevebileceği tarzda, ama DAHA ÖNCE OKUMADIĞI 30 kitabı DB'den çekiyoruz
+        const catalogQuery = `
+            SELECT "bookID", title, author, category 
+            FROM "Book"
+            WHERE (category = ANY($1::text[]) OR author = ANY($2::text[]))
+            AND NOT ("bookID" = ANY($3::int[]))
+            LIMIT 30
+        `;
+        const catalogData = await pool.query(catalogQuery, [favoriteCategories, favoriteAuthors, readBookIds]);
+        const catalogBooks = catalogData.rows;
+
+        if (catalogBooks.length === 0) {
+            return res.status(404).json({ error: "Kütüphanemizde zevkine uygun yeni bir kitap bulamadık." });
+        }
+
+
+        // ====================================================================
+        // ADIM 3: A (AUGMENTED) - PROMPT'U ZENGİNLEŞTİRME
+        // ====================================================================
+        // Çektiğimiz 30 kitabı yapay zekanın okuyabileceği bir "Katalog" metnine çeviriyoruz
+        const catalogText = catalogBooks.map(b => `- ID: ${b.bookID} | Kitap: ${b.title} | Yazar: ${b.author} | Kategori: ${b.category}`).join('\n');
+
         const prompt = `
-            Sen uzman bir kütüphanecisin.
+            Sen uzman bir sahaf kütüphanecisisin.
             Kullanıcının daha önce okuyup çok sevdiği kitaplar şunlar: ${favoriteListText}.
             
-            Bu kullanıcının zevkine uygun, daha önce okumadığı 3 yeni kitap öner.
-            Cevabını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin (markdown vb.) ekleme:
+            DİKKAT: Kullanıcıya SADECE VE SADECE aşağıdaki "Katalog" listesinde bulunan kitaplardan 3 tane yeni öneri yapabilirsin. 
+            Katalog dışında kafandan ASLA kitap uydurma!
+            
+            --- Katalog Başlangıcı ---
+            ${catalogText}
+            --- Katalog Sonu ---
+            
+            Katalogu incele ve kullanıcının zevkine en uygun 3 kitabı seç.
+            Cevabını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin ekleme:
             [
                 {
+                    "bookID": Seçtiğin kitabın ID numarası (Sayı olarak),
                     "title": "Kitap Adı",
                     "author": "Yazar Adı",
-                    "reason": "Neden önerdin? (Türkçe, kısa ve samimi bir açıklama)"
+                    "reason": "Bu kitabı neden önerdin? (Kullanıcının sevdiği kitaplara atıfta bulunarak kısa ve samimi bir açıklama)"
                 }
             ]
         `;
 
-        // 4. GEMINI'YE İSTEK AT
+
+        // ====================================================================
+        // ADIM 4: G (GENERATION) - YAPAY ZEKAYA CEVAPLATMA
+        // ====================================================================
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: 'gemini-3.5-flash', // Sende çalışan modeli yazabilirsin (örn: gemini-3.5-flash)
             contents: prompt,
-            config: {
-                // responseMimeType: "application/json", // İleride daha katı JSON kontrolü için açabiliriz
-            }
         });
 
-        // 5. GELEN CEVABI TEMİZLE VE JSON'A ÇEVİR
-        let aiText = response.text;
-        // Bazen AI kod bloğu (```json) içinde döner, onu temizliyoruz
+        let aiText = response.text; 
         aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
         
         const recommendations = JSON.parse(aiText);
 
         res.status(200).json({
-            message: "Yapay zeka önerileri başarıyla alındı",
+            message: "Sahafın özel RAG önerileri başarıyla alındı",
             recommendations: recommendations
         });
 
     } catch (error) {
-        console.error("AI Hatası:", error);
-        res.status(500).json({ error: "Yapay zeka şu an biraz yorgun, sonra tekrar dene." });
+        console.error("AI RAG Hatası:", error);
+        res.status(500).json({ error: "Yapay zeka öneri motoru şu an meşgul." });
     }
 };
 
