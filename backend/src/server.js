@@ -6,6 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 const libraryRoutes = require("./routes/libraryRoutes");
 const mainRoutes = require("./routes/mainRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 
 require("dotenv").config(); 
@@ -17,6 +18,7 @@ app.use("/api/auth", authRoutes); // gelen istek /api/auth ile başlıyorsa auth
 app.use("/api/main", mainRoutes);
 app.use("/api/library", libraryRoutes); // librarye istek gelirse
 app.use("/api/reviews", reviewRoutes); // maine istek gelirse
+app.use("/api/ai", aiRoutes);
 
 const port = process.env.PORT || 3000; // backendin çalıştığı port
 
