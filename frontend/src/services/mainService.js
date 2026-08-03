@@ -37,7 +37,7 @@ async function getRecommendedBooksRequest(page = 1) {
         if (!token) throw new Error("Giriş yapılmamış.");
 
         // DİKKAT: Rota adresi recommended-books
-        const response = await fetch(`http://localhost:3000/api/main/recommended-books?page=${page}`, {
+        const response = await fetch(`http://localhost:3000/api/ai/ai-recomm`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

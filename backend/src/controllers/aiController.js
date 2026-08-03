@@ -40,7 +40,7 @@ const getAIRecommendations = async (req, res) => {
             FROM "Book"
             WHERE (category = ANY($1::text[]) OR author = ANY($2::text[]))
             AND NOT ("bookID" = ANY($3::int[]))
-            LIMIT 30
+            LIMIT 100
         `;
         const catalogData = await pool.query(catalogQuery, [favoriteCategories, favoriteAuthors, readBookIds]);
         const catalogBooks = catalogData.rows;
@@ -60,14 +60,14 @@ const getAIRecommendations = async (req, res) => {
             Sen uzman bir sahaf kütüphanecisisin.
             Kullanıcının daha önce okuyup çok sevdiği kitaplar şunlar: ${favoriteListText}.
             
-            DİKKAT: Kullanıcıya SADECE VE SADECE aşağıdaki "Katalog" listesinde bulunan kitaplardan 3 tane yeni öneri yapabilirsin. 
+            DİKKAT: Kullanıcıya SADECE VE SADECE aşağıdaki "Katalog" listesinde bulunan kitaplardan 30 tane yeni öneri yapabilirsin. 
             Katalog dışında kafandan ASLA kitap uydurma!
             
             --- Katalog Başlangıcı ---
             ${catalogText}
             --- Katalog Sonu ---
             
-            Katalogu incele ve kullanıcının zevkine en uygun 3 kitabı seç.
+            Katalogu incele ve kullanıcının zevkine en uygun 30 kitabı seç.
             Cevabını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin ekleme:
             [
                 {
@@ -93,9 +93,20 @@ const getAIRecommendations = async (req, res) => {
         
         const recommendations = JSON.parse(aiText);
 
+        // YENİ EKLENEN KISIM BAŞLANGICI: AI'ın seçtiği kitapların tüm detaylarını DB'den çekiyoruz
+        const recommendedBookIds = recommendations.map(r => r.bookID);
+        
+        // Bu 3 kitabın kapak resmi, yayın yılı vb. tüm özelliklerini alıyoruz
+        const finalBooksQuery = `SELECT * FROM "Book" WHERE "bookID" = ANY($1::int[])`;
+        const finalBooksData = await pool.query(finalBooksQuery, [recommendedBookIds]);
+        
+        let finalBooks = finalBooksData.rows;
+
+        // Frontend'in (BookShelf) hata vermemesi için değişken adını "recommendedBooks" yapıyoruz
         res.status(200).json({
-            message: "Sahafın özel RAG önerileri başarıyla alındı",
-            recommendations: recommendations
+            message: "Sahafın özel önerileri hazır!",
+            recommendedBooks: finalBooks, 
+            hasMore: false // AI tek seferlik 3 tane ürettiği için pagination'ı kapatıyoruz
         });
 
     } catch (error) {

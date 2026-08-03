@@ -10,34 +10,44 @@ function BookShelf({onCardClick}) {
     const scrollRef = useRef(null); // CSS ile kaydırma alanına müdahale etmek için referans
     const [isLoadingMore, setIsLoadingMore] = useState(false); // YENİ: Ekstra yükleme mi yapılıyor?
 
+    // YENİ EKLENDİ: Yapay zekanın mesajlarını ekrana basmak için
+    const [aiMessage, setAiMessage] = useState('');
 
+    // Kitapları çeken ortak fonksiyonumuz
     // Kitapları çeken ortak fonksiyonumuz
     const fetchRecommendations = async (currentPage) => {
         if (currentPage === 1) setIsLoading(true);
         else setIsLoadingMore(true);
-
+        setAiMessage(''); // Her istekte eski mesajı temizle
+        
         try {
-        const data = await getRecommendedBooksRequest(currentPage);
-        if (currentPage === 1) {
-            setBooks(data.recommendedBooks);
-        } else {
-            // ÇÖZÜM BURADA: StrictMode çift çağrılarını engellemek için kitapları ID'ye göre filtreleyip ekliyoruz!
-            setBooks(prevBooks => {
-            // Önce eski kitapların ID'lerini bir hafızaya (Set) alıyoruz ki hızlıca kontrol edebilelim
-            const existingIds = new Set(prevBooks.map(book => book.bookID));
+            const data = await getRecommendedBooksRequest(currentPage);
             
-            // Yeni gelen kitaplardan, elimizde OLMAYANLARI filtreliyoruz
-            const newUniqueBooks = data.recommendedBooks.filter(newBook => !existingIds.has(newBook.bookID));
-            
-            // Sadece yepyeni (benzersiz) kitapları eski listeye ekliyoruz
-            return [...prevBooks, ...newUniqueBooks];
-            });
-        }
+            // SENİOR DOKUNUŞU (GÜVENLİK KALKANI): 
+            const incomingBooks = data?.recommendedBooks || data?.recommendations || [];
+
+            if (currentPage === 1) {
+                // DÜZELTME BURADA: 'data.incomingBooks' yerine sadece 'incomingBooks' yazdık.
+                setBooks(incomingBooks);
+            } else {
+                setBooks(prevBooks => {
+                    // Ekstra Güvenlik: prevBooks undefined ise boş dizi kabul et
+                    const safePrev = prevBooks || []; 
+                    const existingIds = new Set(safePrev.map(book => book.bookID));
+                    
+                    const newUniqueBooks = incomingBooks.filter(newBook => !existingIds.has(newBook.bookID));
+                    return [...safePrev, ...newUniqueBooks];
+                });
+            }
+            setHasMore(data?.hasMore || false);
         } catch (err) {
-        console.error("Öneri hatası:", err);
+            console.error("Öneri hatası:", err);
+            setAiMessage(err.message);
+            // Olası bir hatada ekranın çökmesini engellemek için kitapları boşalt
+            if (currentPage === 1) setBooks([]); 
         } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
+            setIsLoading(false);
+            setIsLoadingMore(false);
         }
     };
 
@@ -147,7 +157,13 @@ function BookShelf({onCardClick}) {
             )}
 
             {!isLoading && books.length === 0 && (
-            <p>Şu an için önerilecek kitap bulunamadı.</p>
+          // DÜZELTME BURADA: Eğer kitap yoksa, yapay zekanın mesajını ekrana bas!
+            <div style={{ width: '100%', padding: '30px', textAlign: 'center', backgroundColor: '#e9f1fe', borderRadius: '12px', border: '1px dashed #aecbfa' }}>
+                <h4 style={{ color: '#0b57d0', margin: '0 0 10px 0', fontSize: '18px' }}>🤖 Yapay Zeka Kütüphanecisi</h4>
+                <p style={{ color: '#444', margin: 0 }}>
+                {aiMessage || "Şu an için önerilecek kitap bulunamadı."}
+                </p>
+            </div>
             )}
         </div>
 
