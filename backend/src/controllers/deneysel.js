@@ -1,3 +1,5 @@
+/*
+
 const pool = require('../config/db');
 //const { GoogleGenAI } = require('@google/genai'); GEMINI İÇİN
 const Groq = require('groq-sdk'); // YENİ: Groq kütüphanesini dahil ettik   
@@ -43,7 +45,7 @@ const getAIRecommendations = async (req, res) => {
             FROM "Book"
             WHERE (category = ANY($1::text[]) OR author = ANY($2::text[]))
             AND NOT ("bookID" = ANY($3::int[]))
-            LIMIT 30
+            LIMIT 50
         `;
         const catalogData = await pool.query(catalogQuery, [favoriteCategories, favoriteAuthors, readBookIds]);
         const catalogBooks = catalogData.rows;
@@ -63,14 +65,14 @@ const getAIRecommendations = async (req, res) => {
             Sen uzman bir sahaf kütüphanecisisin.
             Kullanıcının daha önce okuyup çok sevdiği kitaplar şunlar: ${favoriteListText}.
             
-            DİKKAT: Kullanıcıya SADECE VE SADECE aşağıdaki "Katalog" listesinde bulunan kitaplardan 10 tane yeni öneri yapabilirsin. 
+            DİKKAT: Kullanıcıya SADECE VE SADECE aşağıdaki "Katalog" listesinde bulunan kitaplardan 20 tane yeni öneri yapabilirsin. 
             Katalog dışında kafandan ASLA kitap uydurma!
             
             --- Katalog Başlangıcı ---
             ${catalogText}
             --- Katalog Sonu ---
             
-            Katalogu incele ve kullanıcının zevkine en uygun 10 kitabı seç.
+            Katalogu incele ve kullanıcının zevkine en uygun 20 kitabı seç.
             Cevabını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin ekleme:
             [
                 {
@@ -138,3 +140,5 @@ const getAIRecommendations = async (req, res) => {
 };
 
 module.exports = { getAIRecommendations };
+
+*/
