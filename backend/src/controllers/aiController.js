@@ -42,7 +42,7 @@ const getAIRecommendations = async (req, res) => {
             SELECT "bookID", title, author, category 
             FROM "Book"
             WHERE (category = ANY($1::text[]) OR author = ANY($2::text[]))
-            AND NOT ("bookID" = ANY($3::int[]))
+            AND NOT ("bookID" = ANY($3::int[])) ORDER BY "Book"."popularity_score" DESC
             LIMIT 30
         `;
         const catalogData = await pool.query(catalogQuery, [favoriteCategories, favoriteAuthors, readBookIds]);
@@ -57,7 +57,7 @@ const getAIRecommendations = async (req, res) => {
         // ADIM 3: A (AUGMENTED) - PROMPT'U ZENGİNLEŞTİRME
         // ====================================================================
         // Çektiğimiz 30 kitabı yapay zekanın okuyabileceği bir "Katalog" metnine çeviriyoruz
-        const catalogText = catalogBooks.map(b => `- ID: ${b.bookID} | Kitap: ${b.title} | Yazar: ${b.author} | Kategori: ${b.category}`).join('\n');
+        const catalogText = catalogBooks.map(b => `- ID: ${b.bookID} | Kitap: ${b.title} | Yazar: ${b.author} | Skor: ${b.popularity_score} | Kategori: ${b.category}`).join('\n');
 
         const prompt = `
             Sen uzman bir sahaf kütüphanecisisin.
@@ -71,12 +71,14 @@ const getAIRecommendations = async (req, res) => {
             --- Katalog Sonu ---
             
             Katalogu incele ve kullanıcının zevkine en uygun 10 kitabı seç.
+            Seçilen kitapları popularity_score'ları artandan azalana doğru sırala
             Cevabını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin ekleme:
             [
                 {
                     "bookID": Seçtiğin kitabın ID numarası (Sayı olarak),
                     "title": "Kitap Adı",
                     "author": "Yazar Adı",
+                    "popularity_score": "kitabın popülerlik skoru",
                     "reason": "Bu kitabı neden önerdin? (Kullanıcının sevdiği kitaplara atıfta bulunarak kısa ve samimi bir açıklama)"
                 }
             ]
