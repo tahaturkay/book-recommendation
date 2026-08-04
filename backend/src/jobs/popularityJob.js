@@ -3,7 +3,7 @@ const pool = require('../config/db');
 
 // Her gece saat 03:00'te çalışacak görev (0 3 * * *)
 const startPopularityCron = () => {
-    cron.schedule('0 3 * *', async () => {
+    cron.schedule('0 3 * * *', async () => {
         console.log("🌙 [CRON] Gece 03:00 - Popülerlik Skorları hesaplanıyor...");
         const startTime = Date.now();
 
