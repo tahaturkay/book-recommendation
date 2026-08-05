@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const Groq = require('groq-sdk'); // Groq kütüphanesini dahil ettik   
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY }); // groqcuğumuza API KEY'ini verdik
+const { evaluateRecommendationGROQ, evaluateRecommendationGEMINI } = require('../jobs/aiJudge');
 
 const getAIRecommendations = async (req, res) => {
     
@@ -88,7 +89,7 @@ const getAIRecommendations = async (req, res) => {
             - Hiç Sevmediği Kitaplar (1-2 Yıldız): ${dislikedText}
 
             GÖREVİN:
-            Aşağıdaki "Katalog" listesinden, kullanıcının BAYILDIĞI kitapların temasına uygun, ORTA bulduğu kitapları göz önünde bulunduran, ancak HİÇ SEVMEDİĞİ kitapların tarzından ve yazarlarından KESİNLİKLE UZAK DURAN en iyi 18 kitabı seçmektir.
+            Aşağıdaki "Katalog" listesinden, kullanıcının BAYILDIĞI kitapların temasına uygun, ORTA bulduğu kitapları göz önünde bulunduran, ancak HİÇ SEVMEDİĞİ kitapların tarzından ve yazarlarından KESİNLİKLE UZAK DURAN en iyi 15 kitabı seçmektir.
 
             --- Katalog Başlangıcı ---
             ${catalogText}
@@ -150,6 +151,58 @@ const getAIRecommendations = async (req, res) => {
             aiDuration: `${durationInSeconds} saniye`
         });
 
+
+        // LLM-as-a-judge ile groq'cuğumun önerilerini puanlıyoruz
+        (async () => {
+            console.log("[LLM-as-a-Judge] GROQ Hakem değerlendirmesi:");
+            
+            let totalScore = 0;
+
+            const userTastes = `Sevdiği Kitaplar: ${lovedText}. Nötr olduğu Kitaplar: ${neutralText}. Nefret ettiği Kitaplar: ${dislikedText}.`;
+            
+            // groq'un önerdiği 15 kitabı tek tek groqa yolluyoz
+            for (const rec of recommendations) {
+                // userTastes : iste adamin genel ilgi karakteristigi
+                // rec : groq onerileri
+                const judgeResult = await evaluateRecommendationGROQ(userTastes, rec);
+                
+                if (judgeResult) {
+                    totalScore += judgeResult.score;
+                    console.log(`\nKitap: ${rec.title}`);
+                    console.log(`Puan: ${judgeResult.score}/10`);
+                    console.log(`GROQ Hakem Yorumu: ${judgeResult.critique}`);
+                }
+            }
+            
+            const averageScore = (totalScore / recommendations.length).toFixed(1);
+            console.log(`\nGROQ ÖNERİ GENEL KALİTE ORTALAMASI: ${averageScore}/10`);
+        })();
+
+
+        // Gemini'nin hakimligi
+        (async () => {
+            console.log("LLM-as-a-Judge GEMINI Hakem değerlendirmesi:");
+            
+            let totalScore = 0;
+
+            const userTastes = `Sevdiği Kitaplar: ${lovedText}. Nötr olduğu Kitaplar: ${neutralText}. Nefret ettiği Kitaplar: ${dislikedText}.`;
+            
+            // groq'un önerdiği 15 kitabı tek tek gemini'ye sunuyoruz
+            for (const rec of recommendations) {
+                const judgeResult = await evaluateRecommendationGEMINI(userTastes, rec);
+                
+                if (judgeResult) {
+                    totalScore += judgeResult.score;
+                    console.log(`\nKitap: ${rec.title}`);
+                    console.log(`Puan: ${judgeResult.score}/10`);
+                    console.log(`GEMINI Hakem Yorumu: ${judgeResult.critique}`);
+                }
+            }
+            
+            const averageScore = (totalScore / recommendations.length).toFixed(1);
+            console.log(`\nGEMINI ÖNERİ GENEL KALİTE ORTALAMASI: ${averageScore}/10`);
+            
+        })();
     } catch (error) {
         console.error("AI RAG Hatasi:", error);
         res.status(500).json({ error: "Aradiginiz yapay zeka şuan yapamay" });
