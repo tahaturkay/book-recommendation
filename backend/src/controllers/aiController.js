@@ -1,96 +1,115 @@
 const pool = require('../config/db');
-//const { GoogleGenAI } = require('@google/genai'); GEMINI İÇİN
-const Groq = require('groq-sdk'); // YENİ: Groq kütüphanesini dahil ettik   
-
-
-//const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }); Gemini'yi anahtarımızla başlatıyoruz
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const Groq = require('groq-sdk'); // Groq kütüphanesini dahil ettik   
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY }); // groqcuğumuza API KEY'ini verdik
 
 const getAIRecommendations = async (req, res) => {
     
     try {
         const email = req.user.email; 
 
-        // ====================================================================
-        // ADIM 1: KULLANICIYI TANI (Context Gathering)
-        // ====================================================================
-        const userFavoritesQuery = `
-            SELECT b."bookID", b.title, b.category, b.author 
+        // Kullanıcının REVIEW'lerini çekiyoruz
+        const userReviewsQuery = `
+            SELECT b."bookID", b.title, b.category, b.author, r.rating 
             FROM "Review" r
             JOIN "Book" b ON r.has = b."bookID"
-            WHERE r.writes = $1 AND r.rating >= 4
+            WHERE r.writes = $1
         `;
-        const favoritesData = await pool.query(userFavoritesQuery, [email]);
-        const favorites = favoritesData.rows;
+        const userReviewsData = await pool.query(userReviewsQuery, [email]);
+        const userReviews = userReviewsData.rows;
 
-        if (favorites.length === 0) {
-            return res.status(400).json({ error: "Sana öneri yapabilmem için önce birkaç kitaba (4-5 yıldız) puan vermelisin!" });
+        // eğer daha önce hiç review yapmamışsa
+        if (userReviews.length === 0) {
+            return res.status(400).json({ error: "Öneri yapılabilmesi için önce kitap incelemesi yap abi" });
         }
 
-        // Kullanıcının sevdiği kategorileri, yazarları ve zaten okuduğu kitapların ID'lerini ayıklıyoruz
-        const readBookIds = favorites.map(f => f.bookID);
-        const favoriteCategories = [...new Set(favorites.map(f => f.category).filter(Boolean))];
-        const favoriteAuthors = [...new Set(favorites.map(f => f.author).filter(Boolean))];
-        const favoriteListText = favorites.map(f => f.title).join(', ');
+        // Ratinge göre kitapları grupluyoruz
+        const lovedBooks = userReviews.filter(r => r.rating >= 4);
+        const neutralBooks = userReviews.filter(r => r.rating === 3);
+        const dislikedBooks = userReviews.filter(r => r.rating <= 2);
+        // Kullanıcının daha önce okuduğu kitapları ayıklıyoruz
+        const readBookIds = userReviews.map(f => f.bookID);
+        
+        // Pozitif veya nötr olan kitap kategorilerini ve yazarlarını çektik
+        const targetCategories = [...new Set([...lovedBooks, ...neutralBooks].map(b => b.category).filter(Boolean))];
+        const targetAuthors = [...new Set([...lovedBooks, ...neutralBooks].map(b => b.author).filter(Boolean))];
 
+        // Kullanıcının iğrendiği, varlığına lanet ettiği kategorileri çektik
+        const dislikedCategories = [...new Set(dislikedBooks.map(b => b.category).filter(Boolean))];
 
-        // ====================================================================
-        // ADIM 2: R (RETRIEVAL) - KENDİ VERİTABANIMIZDAN KİTAP ÇEKME
-        // ====================================================================
-        // Kullanıcının sevebileceği tarzda, ama DAHA ÖNCE OKUMADIĞI 30 kitabı DB'den çekiyoruz
-        const catalogQuery = `
-            SELECT "bookID", title, author, category 
-            FROM "Book"
-            WHERE (category = ANY($1::text[]) OR author = ANY($2::text[]))
-            AND NOT ("bookID" = ANY($3::int[])) ORDER BY "Book"."popularity_score" DESC
-            LIMIT 30
-        `;
-        const catalogData = await pool.query(catalogQuery, [favoriteCategories, favoriteAuthors, readBookIds]);
-        const catalogBooks = catalogData.rows;
+        // R (RETRIEVAL) - bizim dbden kitap çekiyoruz
+        let catalogQuery = ""; // katalogtaki şartları sağlayan kitaplardan önerilecekleri bu query ile ayıklıycak groqcum
+        let queryParams = []; // buna önereceğimiz kitap, yazar ve katmayacağımız kitapları atıcaz
+        let catalogBooks = []; // yazar, kategori şartını sağlayan kitapları buraya sallıycaz
 
-        if (catalogBooks.length === 0) {
-            return res.status(404).json({ error: "Kütüphanemizde zevkine uygun yeni bir kitap bulamadık." });
+        if (targetCategories.length > 0 || targetAuthors.length > 0) {
+            // Kullanıcının 3, 4 veya 5 verdiği en az bir kitap varsa
+            catalogQuery = `
+                SELECT "bookID", title, author, category, popularity_score 
+                FROM "Book"
+                WHERE (category = ANY($1::text[]) OR author = ANY($2::text[]))
+                AND NOT ("bookID" = ANY($3::int[])) 
+                ORDER BY popularity_score DESC
+                LIMIT 40
+            `;
+            queryParams = [targetCategories, targetAuthors, readBookIds];
+            } else {
+            // Kullanıcı yaptığı tüm reviewlerde tiksindiyse kitaplardan
+            // Sevmediği kategorileri hariç tutup en popülerleri getiriyoruz
+            catalogQuery = `
+                SELECT "bookID", title, author, category, popularity_score 
+                FROM "Book"
+                WHERE NOT (category = ANY($1::text[]))
+                AND NOT ("bookID" = ANY($2::int[])) 
+                ORDER BY popularity_score DESC
+                LIMIT 40
+            `;
+            queryParams = [dislikedCategories, readBookIds];
         }
 
+        const catalogData = await pool.query(catalogQuery, queryParams); // reviewdeki duruma göre şartları sağlayan kitapları buraya salladık
+        catalogBooks = catalogData.rows; // sadece kitapları çektik
 
-        // ====================================================================
-        // ADIM 3: A (AUGMENTED) - PROMPT'U ZENGİNLEŞTİRME
-        // ====================================================================
-        // Çektiğimiz 30 kitabı yapay zekanın okuyabileceği bir "Katalog" metnine çeviriyoruz
-        const catalogText = catalogBooks.map(b => `- ID: ${b.bookID} | Kitap: ${b.title} | Yazar: ${b.author} | Skor: ${b.popularity_score} | Kategori: ${b.category}`).join('\n');
+        if (catalogBooks.length === 0) { // eğer şartları sağlayan kitap çıkmadıysa ortaya
+        return res.status(404).json({ error: "Sana özel niş bir kitap bulamadık reisim :c" });
+        }
 
+        // A (AUGMENTED) - promptumuzu coşturucaz (AOW YEAS)
+        // Çektiğimiz 40 kitabı yapay zekanın okuyabileceği bir "Katalog" metnine çeviriyoruz
+        const catalogText = catalogBooks.map(b => `- ID: ${b.bookID} | ${b.title} | Yazar: ${b.author} | Kategori: ${b.category}`).join('\n');
+        
+        const lovedText = lovedBooks.length > 0 ? lovedBooks.map(b => b.title).join(', ') : "Yok"; // eğer sevdiği kitap varsa virgül koya koya hepsini ekliyo, yoksa yok diyo
+        const neutralText = neutralBooks.length > 0 ? neutralBooks.map(b => b.title).join(', ') : "Yok"; // yukardakinin nötrlüsü
+        const dislikedText = dislikedBooks.length > 0 ? dislikedBooks.map(b => `${b.title} (Yazar: ${b.author})`).join(', ') : "Yok"; // yukardakinin tiksindiği senaryolusu
+                
         const prompt = `
-            Sen uzman bir sahaf kütüphanecisisin.
-            Kullanıcının daha önce okuyup çok sevdiği kitaplar şunlar: ${favoriteListText}.
-            
-            DİKKAT: Kullanıcıya SADECE VE SADECE aşağıdaki "Katalog" listesinde bulunan kitaplardan 10 tane yeni öneri yapabilirsin. 
-            Katalog dışında kafandan ASLA kitap uydurma!
-            
+            Sen uzman bir sahaf kütüphanecisisin. Kullanıcının kitap okuma zevki hakkında şu verilere sahibiz:
+            - Bayıldığı Kitaplar (4-5 Yıldız): ${lovedText}
+            - Orta Bulduğu Kitaplar (3 Yıldız): ${neutralText}
+            - Hiç Sevmediği Kitaplar (1-2 Yıldız): ${dislikedText}
+
+            GÖREVİN:
+            Aşağıdaki "Katalog" listesinden, kullanıcının BAYILDIĞI kitapların temasına uygun, ORTA bulduğu kitapları göz önünde bulunduran, ancak HİÇ SEVMEDİĞİ kitapların tarzından ve yazarlarından KESİNLİKLE UZAK DURAN en iyi 18 kitabı seçmektir.
+
             --- Katalog Başlangıcı ---
             ${catalogText}
             --- Katalog Sonu ---
-            
-            Katalogu incele ve kullanıcının zevkine en uygun 10 kitabı seç.
-            Seçilen kitapları popularity_score'ları artandan azalana doğru sırala
-            Cevabını SADECE aşağıdaki JSON formatında ver, başka hiçbir metin ekleme:
+
+            Katalog dışında kafandan ASLA kitap uydurma.
+            Seçtiğin kitapları popularity_score'a göre değil, kullanıcının zevkine en çok uyandan en aza uyana doğru sırala.
+
+            Cevabını SADECE aşağıdaki JSON formatında ver, kod bloğu veya ekstra metin kullanma:
             [
-                {
-                    "bookID": Seçtiğin kitabın ID numarası (Sayı olarak),
-                    "title": "Kitap Adı",
-                    "author": "Yazar Adı",
-                    "popularity_score": "kitabın popülerlik skoru",
-                    "reason": "Bu kitabı neden önerdin? (Kullanıcının sevdiği kitaplara atıfta bulunarak kısa ve samimi bir açıklama)"
-                }
+            {
+                "bookID": Seçtiğin kitabın ID'si,
+                "title": "Kitap Adı",
+            }
             ]
-        `;
+            `;
 
+        // G (GENERATION) - let AI cook
+        const startTime = Date.now(); // kaç saniyede dönüt verdiğini ölçmek için
 
-        // ====================================================================
-        // ADIM 4: G (GENERATION) - YAPAY ZEKAYA CEVAPLATMA
-        // ====================================================================
-        const startTime = Date.now();
-
-        // 4. GROQ'A GÖNDER VE CEVABI AL (Llama 3.3 70B modeli)
+        // groq'a gönderip cevabı alacaiz (Llama 3.3 70B modeli)
         const response = await groq.chat.completions.create({
             messages: [
                 {
@@ -98,44 +117,42 @@ const getAIRecommendations = async (req, res) => {
                     content: prompt,
                 },
             ],
-            model: "llama-3.3-70b-versatile", // Groq'un en güncel ve en güçlü modellerinden biri
+            model: "llama-3.3-70b-versatile", // güncel modelimiz
             temperature: 0.5,
         });
 
-       // 5. GELEN CEVABI TEMİZLE VE JSON'A ÇEVİR
+       // gelen cevabı json'a çeviriyoruz
         let aiText = response.choices[0]?.message?.content || "";
         aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
 
         const recommendations = JSON.parse(aiText);
 
-        // KRONOMETREYİ DURDUR
+        // süreyi durduruyoruz (bize ne kadar sürede çıktıyı verdiğini söylüyo (input + output süresi total))
         const endTime = Date.now();
-        // Milisaniyeyi saniyeye çevirip virgülden sonra 2 hane alıyoruz (Örn: 2.45)
+        // milisaniyeyi saniyeye çevirip virgülden sonra 2 hane alıyoruz
         const durationInSeconds = ((endTime - startTime) / 1000).toFixed(2);
-        // Terminale havalı bir şekilde yazdıralım
-        console.log(`⏱️ Groq Llama 3 Yanıt Süresi: ${durationInSeconds} saniye`);
+        console.log(`Yanit süresi: ${durationInSeconds} saniye`);
 
-
-        // YENİ EKLENEN KISIM BAŞLANGICI: AI'ın seçtiği kitapların tüm detaylarını DB'den çekiyoruz
+        // AI'ın seçtiği kitapların tüm detaylarını db'den çekmek için bookID'yi alıyoruz
         const recommendedBookIds = recommendations.map(r => r.bookID);
         
-        // Bu 3 kitabın kapak resmi, yayın yılı vb. tüm özelliklerini alıyoruz
+        // kitapların tüm özelliklerini alıyoruz
         const finalBooksQuery = `SELECT * FROM "Book" WHERE "bookID" = ANY($1::int[])`;
         const finalBooksData = await pool.query(finalBooksQuery, [recommendedBookIds]);
         
         let finalBooks = finalBooksData.rows;
 
-        // Frontend'in (BookShelf) hata vermemesi için değişken adını "recommendedBooks" yapıyoruz
+        // Frontend'deki BookShelf'e "recommendedBooks" adıyla yolluyoz ordan şow yapıyoruz sonrasında
         res.status(200).json({
-            message: "Sahafın özel önerileri hazır!",
+            message: "Abim sadece sana ozel bak bu kitaplar",
             recommendedBooks: finalBooks, 
-            hasMore: false, // AI tek seferlik 3 tane ürettiği için pagination'ı kapatıyoruz
+            hasMore: true, // frontta 12 yaptıydım shelf sınırını (EĞER LİMİTİ DEĞİŞTİRİCEK OLURSAM BURAYI UNUTMA)
             aiDuration: `${durationInSeconds} saniye`
         });
 
     } catch (error) {
-        console.error("AI RAG Hatası:", error);
-        res.status(500).json({ error: "Yapay zeka öneri motoru şu an meşgul." });
+        console.error("AI RAG Hatasi:", error);
+        res.status(500).json({ error: "Aradiginiz yapay zeka şuan yapamay" });
     }
 };
 
