@@ -20,9 +20,9 @@ function Login(){
             setMessage("Abii girdiler abiiii");
             setTimeout(() => {
                 navigate('/main'); 
-            }, 1500); // 1500 milisaniye = 1.5 saniye
+            }, 500); // 500 milisaniye = 0.5 saniye
         }catch(error){
-            setMessage('Abu sifre fln yanlis glb');
+            setMessage(error.message);
             console.error(error);
         }
     }

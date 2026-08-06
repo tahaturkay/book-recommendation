@@ -18,11 +18,10 @@ function Register(){
         try{
             const data = await registerRequest(username, email, password);
             setMessage('Kayit basarili');
-            setTimeout(() => {
-                navigate('/login'); 
-            }, 1500); // 2000 milisaniye = 2 saniye
+            navigate('/login'); 
+            
         }catch(error){
-            setMessage('Abu senn hesap olusmadi fln yanlis glb');
+            setMessage(error.message);
             console.error(error);
         }
 

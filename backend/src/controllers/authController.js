@@ -10,11 +10,11 @@ const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password,saltRounds); // şifreyi hashledik
         
         const userInfo = await pool.query('SELECT * FROM "User" where email = $1',[email]); // email eşleşmesi var mı check ediyoruz
-        if( userInfo.rowCount != 0){ // Eğer dönen satır sayısı 0 ise (eşleşme yoksa yani)
+        if( userInfo.rowCount != 0){ // Eğer dönen satır sayısı 0 değil ise (eşleşme varsa)
             console.log("This email already in use!");
             // postman havada kalıyor res.status ekle
             res.status(400).json({
-                message: "There is no such user",
+                message: "Bu email kullanımda",
                 user: {email},
                 auth: false
             });
@@ -23,7 +23,7 @@ const register = async (req, res) => {
             // sql injection preventer
             await pool.query('INSERT INTO "User" (username, email, password) VALUES ($1, $2, $3) RETURNING *', [username, email, hashedPassword]); // databaseye kayıt olan kullanıcının bilgilerini attık
             res.status(201).json({
-                message: "Kullanici olustu",
+                message: "Kayıt başarılı!",
                 user: {username, email, hashedPassword} // test icin
             });
         }
@@ -45,7 +45,7 @@ const login = async (req, res) => {
             console.log("There is no such user exist!!");
             // postman havada kalıyor res.status ekle
             res.status(404).json({
-                message: "There is no such user",
+                message: "Yanlış email ya da şifre",
                 user: {email},
                 auth: false
             });
@@ -72,7 +72,7 @@ const login = async (req, res) => {
             }else{ // eşleşme yoksa
                 console.log("Password didn't match :c");
                 res.status(401).json({ 
-                message: "Wrong password",
+                message: "Yanlış email ya da şifre",
                 user: {email},
                 auth: false
             });

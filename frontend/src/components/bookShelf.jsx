@@ -134,7 +134,7 @@ function BookShelf({onCardClick}) {
             ))}
 
             {/* YENİ: Rafın en sonuna "Daha Fazla Göster" butonu ekliyoruz */}
-            {!isLoading && hasMore && (
+            {!isLoading && books.length > 0 && hasMore && (
             <div style={{ flex: '0 0 auto', width: '240px', height: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'start' }}>
                 <button 
                 onClick={handleLoadMore}
@@ -157,8 +157,8 @@ function BookShelf({onCardClick}) {
             )}
 
             {!isLoading && books.length === 0 && (
-          // DÜZELTME BURADA: Eğer kitap yoksa, yapay zekanın mesajını ekrana bas!
-            <div style={{ width: '100%', padding: '30px', textAlign: 'center', backgroundColor: '#e9f1fe', borderRadius: '12px', border: '1px dashed #aecbfa' }}>
+            // Eğer kitap yoksa yapay zekanın mesajını yazıyoruz
+            <div style={{ height: '100%', width: '100%', padding: '30px', textAlign: 'center', backgroundColor: '#e9f1fe', borderRadius: '12px', border: '1px dashed #aecbfa' }}>
                 <h4 style={{ color: '#0b57d0', margin: '0 0 10px 0', fontSize: '18px' }}>🤖 Yapay Zeka Kütüphanecisi</h4>
                 <p style={{ color: '#444', margin: 0 }}>
                 {aiMessage || "Şu an için önerilecek kitap bulunamadı."}

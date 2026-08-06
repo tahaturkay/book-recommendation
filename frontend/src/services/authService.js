@@ -21,12 +21,12 @@ async function loginRequest(email, password){
     return data; // gelen cevabı returnluyoruz
   } else {
     // durum başaramadık abi ise
-    setMessage('Hata: ' + (data.error || 'Giriş yapılamadı'));
+    throw new Error(data.message || data.error || 'Kayıt yapılamadı');
   }
 
 } catch (error) {
   // direkt sunucusal problem varsa
-  setMessage('Sunucuya bağlanılamadı. Node.js açık mı?');
+  throw error
 }
 }
 
@@ -53,12 +53,12 @@ async function registerRequest(username, email, password){
     return data; // gelen cevabı returnluyoruz
   } else {
     // durum başaramadık abi ise
-    setMessage('Hata: ' + (data.error || 'Kayit yapilamadi'));
+    throw new Error(data.message || data.error || 'Kayıt yapılamadı');
   }
 
 } catch (error) {
   // direkt sunucusal problem varsa
-  setMessage('Sunucuya bağlanılamadı. Node.js açık mı?');
+  throw error;
 }
 }
 export {registerRequest, loginRequest};
