@@ -21,7 +21,7 @@ app.use("/api/library", libraryRoutes); // librarye istek gelirse
 app.use("/api/reviews", reviewRoutes); // maine istek gelirse
 app.use("/api/ai", aiRoutes);
 
-// YENİ EKLENEN: Cron Job'ı başlat
+// Cron Job'ı başlat
 startPopularityCron();
 
 const port = process.env.PORT || 3000; // backendin çalıştığı port

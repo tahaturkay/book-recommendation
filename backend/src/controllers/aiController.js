@@ -151,6 +151,7 @@ const getAIRecommendations = async (req, res) => {
             aiDuration: `${durationInSeconds} saniye`
         });
 
+        /*
 
         // LLM-as-a-judge ile groq'cuğumun önerilerini puanlıyoruz
         (async () => {
@@ -201,8 +202,10 @@ const getAIRecommendations = async (req, res) => {
             
             const averageScore = (totalScore / recommendations.length).toFixed(1);
             console.log(`\nGEMINI ÖNERİ GENEL KALİTE ORTALAMASI: ${averageScore}/10`);
-            
+
+    
         })();
+        */
     } catch (error) {
         console.error("AI RAG Hatasi:", error);
         res.status(500).json({ error: "Aradiginiz yapay zeka şuan yapamay" });

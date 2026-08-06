@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import {loginRequest} from "../services/authService";
-import { useNavigate } from "react-router-dom"; // 1. EKLENDİ: Yönlendirme kancasını içeri al
+import { useNavigate } from "react-router-dom"; // bunun sayesinde başka sayfaya atıyo (burdan maine fırlıycaz)
 
 function Login(){
 
-    // Kullanıcı girdileri burda tutuluyo
+    // Kullanıcı girdileri burda tutuluyo hafıza oluşturuyoz
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState(''); // bu sadece ekranda info vermek için
@@ -20,49 +20,83 @@ function Login(){
             setMessage("Abii girdiler abiiii");
             setTimeout(() => {
                 navigate('/main'); 
-            }, 1500); // 2000 milisaniye = 2 saniye
+            }, 1500); // 1500 milisaniye = 1.5 saniye
         }catch(error){
             setMessage('Abu sifre fln yanlis glb');
             console.error(error);
         }
-
+    }
+    const navigateToRegister = async(e) => {
+        try{
+            navigate('/register');
+        }catch(error){
+            setMessage("registere yonlendiremedm ozr dlerm");
+            console.error(error);
+        }
     }
 return (
-<div style={{ padding: '50px', maxWidth: '400px', margin: '0 auto'}}>
-Login
+<div style={{padding: '250px', maxWidth: '250px', margin: '0 auto', background: '#f3f4f1'}}>
+    <h1 style={{
+        display: 'flex',
+        justifyContent: 'center',
+        fontSize: "24px",
+        color: "#735a2c",
+        letterSpacing: "5.5px"
+    }}>
+        Hoş Geldiniz
+    </h1>
     {}
     {message && <p style={{ color: 'blue', padding: '10px', background: '#f0f8ff', borderRadius: '5px' }}>{message}</p>}
 
-  {/* Form onSubmit ile tetikleyici fonksiyonumuzu bağlıyoruz */}
+  {/* Form onSubmit ile tetikleyici fonksiyonu bağladık */}
     <form onSubmit={handleLogin}>
-    
-        <div style={{ marginBottom: '15px' }}>
+
+        {/* EMAIL kutusu bu */}
+        <div style={{ marginBottom: '15px',marginTop: '20px' }}>
             <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-        {/* 2. KLAVYE DİNLEYİCİSİ: value ve onChange ikilisi */}
+        {/* value ve onChange ikilisi */}
             <input 
-                type="email" 
+                type="email" // bu type sayesinde @ işaretli bişi bekliyo
                 value={email} // Kutunun içindeki yazı = bizim hafızamızdaki email
                 onChange={(e) => setEmail(e.target.value)} // Klavyede her tuşa basıldığında hafızayı güncelle
-                required 
-                style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                required // eksik girilip submite basıcna error fırlattırıyo 
+                style={{ width: '100%', padding: '7px', boxSizing: 'border-box' }}
             />
         </div>
 
+        {/* SIFRE kutusu bu */}
         <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px' }}>Şifre:</label>
             <input 
-                type="password" 
+                type="password" // bu type sayesinde gözükmüyo arayüzde
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
-                required 
-                style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                required // girmeden submitleyince abi doldur diyo
+                style={{ width: '100%', padding: '7px', boxSizing: 'border-box' }}
             />
         </div>
 
-        <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer', background: '#0b57d0', color: 'white', border: 'none', borderRadius: '5px' }}>
-            Giriş
+        {/* SUBMIT BUTONU bu */}
+        <div style={{display: 'flex', justifyContent: 'center'}}>
+            <button 
+                type="submit"
+                style={{fontSize: '15px',padding: '10px 50px', cursor: 'pointer', background: '#0b57d0', color: 'white', border: 'none', borderRadius: '5px' }}>
+                Giriş
         </button>
+        </div>
+        
     </form>
+
+        {/* HESABIM YOK BUTONU bu */}
+        <div style={{display: 'flex', justifyContent: 'center', marginTop: "10px"}}>
+            <button 
+                type="submit"
+                onClick={navigateToRegister}
+                style={{fontSize: '15px',padding: '10px 50px', cursor: 'pointer', background: '#ffffff', color: 'blue', border: 'none', borderRadius: '5px' }}>
+            Hesabım yok
+        </button>
+        </div>
+
 
 </div>
 

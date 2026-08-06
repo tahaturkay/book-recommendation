@@ -37,7 +37,7 @@ async function evaluateRecommendationGROQ(userTastes, recommendation) {
         // yine groqun reasoning için olan bi yz'sini kullanıyorum
         const chatCompletion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
-            model: "openai/gpt-oss-20b", 
+            model: "llama-3.3-70b-versatile", 
             reasoning_effort: "high", // fena kafa patlatsın
             temperature: 0.6, // biraz daha kararlı cevap
             response_format: { type: "json_object" }

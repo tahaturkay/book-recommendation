@@ -27,30 +27,48 @@ function Register(){
         }
 
     }
+    const navigateToLogin = async (e) => {
+        try{
+            navigate('/login');
+        } catch(error){
+            setMessage("Logine yonlendremedm ozr dlerm");
+            console.error(error);
+        }
+    }
 return (
-<div style={{ padding: '50px', maxWidth: '400px', margin: '0 auto'}}>
-Register
+<div style={{ padding: '250px', maxWidth: '250px', margin: '0 auto', background: '#f3f4f1'}}>
+    <h1 style={{
+        display: 'flex',
+        justifyContent: 'center',
+        fontSize: "24px",
+        color: "#735a2c",
+        letterSpacing: "5.5px"
+    }}>
+        Aramıza Katıl!
+    </h1>
     {}
     {message && <p style={{ color: 'blue', padding: '10px', background: '#f0f8ff', borderRadius: '5px' }}>{message}</p>}
 
   {/* Form onSubmit ile tetikleyici fonksiyonumuzu bağlıyoruz */}
     <form onSubmit={handleRegister}>
-    
+
+        {/* USERNAME bu */}
         <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
-        {/* 2. KLAVYE DİNLEYİCİSİ: value ve onChange ikilisi */}
+        {/* value ve onChange ikilisi */}
             <input 
                 type="text" 
                 value={username} // Kutunun içindeki yazı = bizim hafızamızdaki email
                 onChange={(e) => setUserName(e.target.value)} // Klavyede her tuşa basıldığında hafızayı güncelle
                 required 
-                style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '7px', boxSizing: 'border-box' }}
             />
         </div>
 
+        {/* EMAIL bu */}
         <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-        {/* 2. KLAVYE DİNLEYİCİSİ: value ve onChange ikilisi */}
+        {/* value ve onChange ikilisi */}
             <input 
                 type="email" 
                 value={email} // Kutunun içindeki yazı = bizim hafızamızdaki email
@@ -60,6 +78,7 @@ Register
             />
         </div>
 
+        {/* SIFRE bu */}
         <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px' }}>Şifre:</label>
             <input 
@@ -71,11 +90,25 @@ Register
             />
         </div>
 
-        <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer', background: '#0b57d0', color: 'white', border: 'none', borderRadius: '5px' }}>
-            Kayit ol
-        </button>
+        {/* SUBMIT BUTONU bu */}
+        <div style={{display: 'flex', justifyContent: 'center'}}>
+            <button 
+                type="submit" 
+                style={{ fontSize: '15px',padding: '10px 50px', cursor: 'pointer', background: '#0b57d0', color: 'white', border: 'none', borderRadius: '5px' }}>
+                Kayıt ol
+            </button>
+        </div>
     </form>
 
+    <div style={{display: 'flex', justifyContent: 'center', marginTop: '15px'}}>
+        <button
+            type="submit"
+            onClick={navigateToLogin}
+            style={{ fontSize: '15px',padding: '10px 50px', cursor: 'pointer', background: '#ffffff', color: 'blue', border: 'none', borderRadius: '5px' }}>
+            
+            Hesabım var
+        </button>
+    </div>
 </div>
 
 
