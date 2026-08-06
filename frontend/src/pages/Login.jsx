@@ -53,10 +53,11 @@ return (
 
         {/* EMAIL kutusu bu */}
         <div style={{ marginBottom: '15px',marginTop: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
+            <label style={{ display: 'block', marginBottom: '5px'}}>Email:</label>
         {/* value ve onChange ikilisi */}
             <input 
                 type="email" // bu type sayesinde @ işaretli bişi bekliyo
+                placeholder="örnek_email@xxx.com"
                 value={email} // Kutunun içindeki yazı = bizim hafızamızdaki email
                 onChange={(e) => setEmail(e.target.value)} // Klavyede her tuşa basıldığında hafızayı güncelle
                 required // eksik girilip submite basıcna error fırlattırıyo 
@@ -70,6 +71,7 @@ return (
             <input 
                 type="password" // bu type sayesinde gözükmüyo arayüzde
                 value={password} 
+                placeholder="Şifre (hadi bakmıyorum)"
                 onChange={(e) => setPassword(e.target.value)} 
                 required // girmeden submitleyince abi doldur diyo
                 style={{ width: '100%', padding: '7px', boxSizing: 'border-box' }}

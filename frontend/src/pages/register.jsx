@@ -58,6 +58,7 @@ return (
         {/* value ve onChange ikilisi */}
             <input 
                 type="text" 
+                placeholder="crazyboy99"
                 value={username} // Kutunun içindeki yazı = bizim hafızamızdaki email
                 onChange={(e) => setUserName(e.target.value)} // Klavyede her tuşa basıldığında hafızayı güncelle
                 required 
@@ -71,6 +72,7 @@ return (
         {/* value ve onChange ikilisi */}
             <input 
                 type="email" 
+                placeholder="madnessmad@xxx.com"
                 value={email} // Kutunun içindeki yazı = bizim hafızamızdaki email
                 onChange={(e) => setEmail(e.target.value)} // Klavyede her tuşa basıldığında hafızayı güncelle
                 required 
@@ -83,6 +85,7 @@ return (
             <label style={{ display: 'block', marginBottom: '5px' }}>Şifre:</label>
             <input 
                 type="password" 
+                placeholder="don't forget!"
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 

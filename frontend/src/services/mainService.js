@@ -5,7 +5,7 @@ async function getBooksRequest(page = 1, searchQuery = "", category = "") {
 
     // token yoksa hata
     if (!token) {
-      throw new Error("Giriş yapılmamış. VİP bileklik bulunamadı.");
+      throw new Error("Token yok");
     }
 
     // "Bearer <token>" ekleyerek backende istek fırlattık görüntülemek için
@@ -34,7 +34,7 @@ async function getBooksRequest(page = 1, searchQuery = "", category = "") {
 async function getRecommendedBooksRequest(page = 1) {
     try {
         const token = localStorage.getItem('jwt_token');
-        if (!token) throw new Error("Giriş yapılmamış.");
+        if (!token) throw new Error("Token yok");
 
         // DİKKAT: Rota adresi recommended-books
         const response = await fetch(`http://localhost:3000/api/ai/ai-recomm`, {
@@ -58,7 +58,7 @@ async function getRecommendedBooksRequest(page = 1) {
 async function getCategoriesRequest() {
     try {
         const token = localStorage.getItem('jwt_token');
-        if (!token) throw new Error("Giriş yapılmamış.");
+        if (!token) throw new Error("Token yok");
 
         const response = await fetch(`http://localhost:3000/api/main/categories`, {
         method: 'GET',
